@@ -61,13 +61,15 @@ impl Client {
 	}
 
 	pub async fn run(&self) -> Result<()> {
+		let node_api = crate::k8s::node::new(self);
+
 		enable_raw_mode()?;
 		let _guard = scopeguard::guard((), |_| {
 			// Ensure that we drop out of raw mode.
 			let _ = disable_raw_mode();
 		});
 
-		let node = match crate::k8s::node::find_node(self).await {
+		let node = match node_api.find_node().await {
 			Ok(x) => x,
 			Err(e) => anyhow::bail!("failed to find a node: {}", e),
 		};
