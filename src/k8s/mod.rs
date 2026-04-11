@@ -1,6 +1,5 @@
 pub mod client;
-
-mod node;
-mod pod;
-mod pv;
-mod pvc;
+pub mod node;
+pub mod pod;
+pub mod pv;
+pub mod pvc;

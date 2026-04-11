@@ -1,15 +1,14 @@
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode, size};
+use crossterm::terminal::size;
 use futures::{SinkExt, StreamExt};
 use kube::{
 	Config,
 	api::{AttachedProcess, TerminalSize},
 	config::KubeConfigOptions,
 };
-use scopeguard;
-use tracing::{info, warn};
+use tracing::warn;
 
 pub struct Builder {
 	context_path: Option<PathBuf>,
@@ -58,46 +57,6 @@ pub struct Client {
 impl Client {
 	pub fn builder() -> Builder {
 		Builder::default()
-	}
-
-	pub async fn run(&self) -> Result<()> {
-		let node_api = crate::k8s::node::new(self);
-
-		enable_raw_mode()?;
-		let _guard = scopeguard::guard((), |_| {
-			// Ensure that we drop out of raw mode.
-			let _ = disable_raw_mode();
-		});
-
-		let node = match node_api.find_node().await {
-			Ok(x) => x,
-			Err(e) => anyhow::bail!("failed to find a node: {}", e),
-		};
-		let node_name = node.metadata.name.context("failed to get node")?;
-
-		warn!("about to create pv");
-		let pv = crate::k8s::pv::generate_pv(node_name);
-		crate::k8s::pv::instantiate_pv(self, &pv).await?;
-
-		warn!("about to create pvc");
-		let pvc = crate::k8s::pvc::generate_pvc()?;
-		crate::k8s::pvc::instantiate_pvc(self, &pvc).await?;
-
-		warn!("about to create pod");
-		let pod = crate::k8s::pod::generate_pod();
-		let pod = crate::k8s::pod::instantiate_pod(self, &pod).await?;
-		let pod_name = pod.metadata.name.as_ref().unwrap().clone();
-		warn!("runrunrun");
-		let mut attached_process = crate::k8s::pod::runrunrun(self, pod_name).await?;
-
-		warn!("attaching resize and streams");
-		self.handle_resize(&mut attached_process).await?;
-		self.handle_streams(&mut attached_process).await?;
-
-		let status = attached_process.take_status().unwrap().await;
-		info!("{:?}", status);
-
-		Ok(())
 	}
 
 	pub fn client(&self) -> kube::Client {

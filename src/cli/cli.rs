@@ -112,7 +112,10 @@ impl Cli {
 				warn!("building client");
 				let client = builder.build().await?;
 				warn!("running client");
-				client.run().await
+
+				let cmd = crate::cli::commands::run::Command::new(client);
+
+				cmd.run().await
 			},
 			Some((CMD_VERSION, _sub)) => Ok(()),
 			_ => Ok(()),
