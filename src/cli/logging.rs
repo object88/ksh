@@ -13,8 +13,6 @@ use serde::{
 };
 use tracing::level_filters::LevelFilter;
 
-// use ksh::logging::{ConfigLevelFilter, DEFAULT as CONFIGLEVELFILTER_DEFAULT};
-
 const OFF: &str = "off";
 const ERROR: &str = "error";
 const WARN: &str = "warn";
@@ -75,22 +73,24 @@ impl<'de> Visitor<'de> for ConfigLevelFilterVisitor {
 
 /// Using serde to deserialize the ConfigLevelFilter
 /// ```
+/// use ksh::cli::logging::ConfigLevelFilter;
 /// #[derive(serde::Deserialize)]
 /// struct Foo {
-///	  a: logging::ConfigLevelFilter,
+///	  a: ConfigLevelFilter,
 /// }
 /// # fn main() {
 /// let raw = r#"{"a":"off"}"#;
 ///	let f: Foo = serde_json::from_str(raw).unwrap();
-/// assert!(f.a == logging::ConfigLevelFilter::Off)
+/// assert!(f.a == ConfigLevelFilter::Off)
 /// # }
 /// ```
 ///
 /// This is a runtime error
 /// ```should_panic
+/// use ksh::cli::logging::ConfigLevelFilter;
 /// #[derive(serde::Deserialize)]
 /// struct Foo {
-///	  a: logging::ConfigLevelFilter,
+///	  a: ConfigLevelFilter,
 /// }
 /// # fn main() {
 /// let raw = r#"{}"#;
