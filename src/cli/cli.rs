@@ -8,6 +8,7 @@ use clap::{
 };
 use tracing::warn;
 
+use crate::k8s::pod::Name;
 use crate::{
 	cli::logging::{self, ConfigLevelFilter},
 	k8s::client::Client,
@@ -21,6 +22,9 @@ const CMD_VERSION: &str = "version";
 const FLAG_KUBECONFIG_FILE: &str = "kubeconfig";
 const FLAG_LOG_LEVEL: &str = "log-level";
 const FLAG_PROFILES_FILE: &str = "profiles";
+
+const CMD_RUN_FLAG_NAME: &str = "name";
+const CMD_RUN_FLAG_GENERATIVE_NAME: &str = "generative-name";
 
 enum Cmd {
 	Debug,
@@ -88,7 +92,16 @@ impl Cli {
 			.arg_required_else_help(true)
 			.subcommand(Command::new(CMD_DEBUG))
 			.subcommand(Command::new(CMD_EXEC))
-			.subcommand(Command::new(CMD_RUN))
+			.subcommand(
+				Command::new(CMD_RUN)
+					.arg(
+						Arg::new(CMD_RUN_FLAG_GENERATIVE_NAME)
+							.long(CMD_RUN_FLAG_GENERATIVE_NAME)
+							.default_value("ksh-")
+							.conflicts_with(CMD_RUN_FLAG_NAME),
+					)
+					.arg(Arg::new(CMD_RUN_FLAG_NAME).long(CMD_RUN_FLAG_NAME)),
+			)
 			.subcommand(Command::new(CMD_VERSION));
 
 		Cli { root }
@@ -106,14 +119,22 @@ impl Cli {
 		match matches.subcommand() {
 			Some((CMD_DEBUG, _sub)) => Ok(()),
 			Some((CMD_EXEC, _sub)) => Ok(()),
-			Some((CMD_RUN, _sub)) => {
+			Some((CMD_RUN, sub)) => {
 				warn!("building builder");
 				let builder = Client::builder();
 				warn!("building client");
 				let client = builder.build().await?;
 				warn!("running client");
 
-				let cmd = crate::cli::commands::run::Command::new(client);
+				let name: Name = if let Some(x) = sub.get_one::<String>(CMD_RUN_FLAG_NAME) {
+					Name::Strict(x.clone())
+				} else if let Some(x) = sub.get_one::<String>(CMD_RUN_FLAG_GENERATIVE_NAME) {
+					Name::Generated(x.clone())
+				} else {
+					!unreachable!()
+				};
+
+				let cmd = crate::cli::commands::run::Command::new(client, name);
 
 				cmd.run().await
 			},

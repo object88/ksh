@@ -7,16 +7,20 @@ use kube::api::{AttachedProcess, TerminalSize};
 use scopeguard;
 use tracing::{info, warn};
 
+use crate::k8s::pod::Name;
+
 pub struct Command {
-	pub client: crate::k8s::client::Client,
+	client: crate::k8s::client::Client,
 	node_api: crate::k8s::node::NodeClient,
 	pv_api: crate::k8s::pv::PvClient,
 	pvc_mgr: crate::k8s::pvc::Manager,
 	pod_mgr: crate::k8s::pod::Manager,
+
+	name: Name,
 }
 
 impl Command {
-	pub fn new(client: crate::k8s::client::Client) -> Command {
+	pub fn new(client: crate::k8s::client::Client, name: Name) -> Command {
 		let node_api = crate::k8s::node::new(&client);
 		let pv_api = crate::k8s::pv::new(&client);
 		let pvc_mgr = crate::k8s::pvc::new(&client);
@@ -28,6 +32,7 @@ impl Command {
 			pv_api,
 			pvc_mgr,
 			pod_mgr,
+			name,
 		}
 	}
 
@@ -53,7 +58,7 @@ impl Command {
 		self.pvc_mgr.instantiate(&pvc).await?;
 
 		warn!("about to create pod");
-		let pod = self.pod_mgr.generate();
+		let pod = self.pod_mgr.generate(&self.name);
 		let pod = self.pod_mgr.instantiate(&pod).await?;
 		let pod_name = pod.metadata.name.as_ref().unwrap().clone();
 		warn!("runrunrun");

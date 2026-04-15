@@ -11,6 +11,12 @@ use tracing::{info, warn};
 
 use crate::k8s::client::Client;
 
+pub enum Name {
+	Generated(String),
+
+	Strict(String),
+}
+
 pub struct Manager {
 	api: Api<Pod>,
 }
@@ -22,10 +28,10 @@ pub fn new(client: &Client) -> Manager {
 
 impl Manager {
 	// TODO: bind pod to particular node
-	pub fn generate(&self) -> Pod {
-		let pod_spec = Pod {
+	pub fn generate(&self, name: &Name) -> Pod {
+		let mut pod_spec = Pod {
 			metadata: ObjectMeta {
-				name: Some("foo".to_string()),
+				// generate_name: Some("ksh-".to_string()),
 				..Default::default()
 			},
 			spec: Some(PodSpec {
@@ -56,6 +62,15 @@ impl Manager {
 			}),
 			..Default::default()
 		};
+
+		match name {
+			Name::Generated(x) => {
+				pod_spec.metadata.generate_name = Some(x.clone());
+			},
+			Name::Strict(x) => {
+				pod_spec.metadata.name = Some(x.clone());
+			},
+		}
 
 		pod_spec
 	}
