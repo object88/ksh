@@ -14,7 +14,13 @@ updates:
     schedule:
       interval: "cron"
       cronjob: "0 8 * * *"
+    cooldown:
+      default-days: 5
+      semver-major-days: 30
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 5
+      semver-major-days: 7
