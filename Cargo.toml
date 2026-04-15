@@ -1,6 +1,6 @@
 [package]
 name = "ksh"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2024"
 
 [[bin]]
@@ -27,3 +27,8 @@ tokio = { version = "1.51.1", features = ["io-std", "macros", "rt-multi-thread"]
 tower = { version = "0.5.3" }
 tracing = { version = "0.1.36" }
 tracing-subscriber = { version = "0.3.22" }
+
+[patch.crates-io]
+# Responding to security advisory: https://rustsec.org/advisories/RUSTSEC-2026-0097.html
+# Dependencies pull in version with vulnerability.
+rand = { git = "https://github.com/rust-random/rand.git", tag = "0.9.4"}

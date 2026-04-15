@@ -1,0 +1,102 @@
+name: build
+permissions:
+  contents: read
+  statuses: write
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+    branches:
+      - main
+    types:
+      - labeled
+      - opened
+      - reopened
+      - synchronize
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Check
+        run: |
+          cargo check
+
+  lint:
+    runs-on: ubuntu-latest
+    needs:
+      - prepare
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Format
+        run: |
+          cargo fmt --check
+      - name: Lint
+        run: |
+          cargo clippy
+      - name: Lint (release)
+        run: |
+          cargo clippy --release
+
+  build:
+    runs-on: ubuntu-latest
+    needs:
+      - prepare
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Build
+        run: |
+          cargo build --release --verbose
+      - name: Run tests
+        run: |
+          cargo nextest run --verbose
+      - name: Set final commit status
+        if: always()
+        env:
+          STATUS: ${{ job.status }}
+        uses: actions/github-script@v8
+        with:
+          script: |
+            github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: ('${{ env.STATUS }}' == 'success' ? 'success' : 'error'),
+              description: ('${{ env.STATUS }}' == 'success' ? 'Complete' : 'Failed'),
+              context: 'Build complete',
+              target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            });
