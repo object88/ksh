@@ -83,7 +83,7 @@ jobs:
           cargo build --release --verbose
       - name: Run tests
         run: |
-          cargo nextest run --verbose
+          cargo test
       - name: Set final commit status
         if: always()
         env:
