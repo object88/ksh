@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use anyhow::{Context, Result};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode, size};
 use futures::{SinkExt, StreamExt};
@@ -10,7 +8,6 @@ use tracing::{info, warn};
 use crate::k8s::pod::Name;
 
 pub struct Command {
-	client: crate::k8s::client::Client,
 	node_api: crate::k8s::node::NodeClient,
 	pv_api: crate::k8s::pv::PvClient,
 	pvc_mgr: crate::k8s::pvc::Manager,
@@ -27,7 +24,6 @@ impl Command {
 		let pod_mgr = crate::k8s::pod::new(&client);
 
 		Command {
-			client,
 			node_api,
 			pv_api,
 			pvc_mgr,

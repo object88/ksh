@@ -44,9 +44,9 @@ impl Display for Cmd {
 	}
 }
 
-impl Into<clap::builder::Str> for Cmd {
-	fn into(self) -> clap::builder::Str {
-		match self {
+impl From<Cmd> for clap::builder::Str {
+	fn from(val: Cmd) -> Self {
+		match val {
 			Cmd::Debug => CMD_DEBUG.into(),
 			Cmd::Exec => CMD_EXEC.into(),
 			Cmd::Run => CMD_RUN.into(),
@@ -113,7 +113,7 @@ impl Cli {
 		// Configure logging first; let's figure out how to report back to the world.
 		let log_level: &ConfigLevelFilter = matches
 			.get_one::<ConfigLevelFilter>(FLAG_LOG_LEVEL)
-			.unwrap_or_else(|| &logging::DEFAULT);
+			.unwrap_or(&logging::DEFAULT);
 		logging::init(log_level);
 
 		match matches.subcommand() {

@@ -78,7 +78,7 @@ impl Manager {
 	pub async fn instantiate(&self, pod_spec: &Pod) -> Result<Pod> {
 		let pod = self
 			.api
-			.create(&PostParams::default(), &pod_spec)
+			.create(&PostParams::default(), pod_spec)
 			.await
 			.context("creating pod")?;
 		let pod_name = pod.metadata.name.as_ref().unwrap();
