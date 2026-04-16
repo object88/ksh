@@ -94,7 +94,7 @@ impl<'de> Visitor<'de> for ConfigLevelFilterVisitor {
 /// }
 /// # fn main() {
 /// let raw = r#"{}"#;
-///	let f: Foo = serde_json::from_str(raw).unwrap();
+/// let f: Foo = serde_json::from_str(raw).unwrap();
 /// # }
 /// ```
 impl<'de> Deserialize<'de> for ConfigLevelFilter {

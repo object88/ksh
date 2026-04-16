@@ -52,9 +52,7 @@ impl PvClient {
 							}]),
 							..Default::default()
 						}],
-						..Default::default()
 					}),
-					..Default::default()
 				}),
 				persistent_volume_reclaim_policy: Some("Retain".to_string()),
 				storage_class_name: Some("local-path".to_string()),
@@ -69,7 +67,7 @@ impl PvClient {
 	pub async fn instantiate(&self, pv_spec: &PersistentVolume) -> Result<PersistentVolume> {
 		self
 			.api
-			.create(&PostParams::default(), &pv_spec)
+			.create(&PostParams::default(), pv_spec)
 			.await
 			.with_context(|| {
 				let name = (|| -> Option<String> { Some(pv_spec.meta().name.as_ref()?.clone()) })()

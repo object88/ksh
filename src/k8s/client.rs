@@ -10,6 +10,7 @@ use kube::{
 };
 use tracing::warn;
 
+#[derive(Default)]
 pub struct Builder {
 	context_path: Option<PathBuf>,
 }
@@ -39,14 +40,6 @@ impl Builder {
 		warn!("info: {:?}", info);
 
 		Ok(Client { client })
-	}
-}
-
-impl Default for Builder {
-	fn default() -> Self {
-		Self {
-			context_path: Default::default(),
-		}
 	}
 }
 
