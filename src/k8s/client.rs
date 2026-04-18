@@ -1,37 +1,94 @@
 use std::path::PathBuf;
 
-use anyhow::{Context, Result};
+use anyhow::{Context as AnyhowContext, Result};
 use crossterm::terminal::size;
 use futures::{SinkExt, StreamExt};
+use hyper_util::rt::TokioExecutor;
 use kube::{
-	Config,
+	Client as K8sClient, Config,
 	api::{AttachedProcess, TerminalSize},
+	client::ConfigExt,
 	config::KubeConfigOptions,
 };
+use tower::{BoxError, ServiceBuilder};
 use tracing::warn;
+
+#[derive(Clone, Debug)]
+pub struct Cluster(String);
+
+impl From<String> for Cluster {
+	fn from(value: String) -> Self {
+		Cluster(value)
+	}
+}
+
+#[derive(Clone, Debug)]
+pub struct Context(String);
+
+impl From<String> for Context {
+	fn from(value: String) -> Self {
+		Context(value)
+	}
+}
+
+#[derive(Clone, Debug)]
+pub struct Namespace(String);
+
+impl From<String> for Namespace {
+	fn from(value: String) -> Self {
+		Namespace(value)
+	}
+}
 
 #[derive(Default)]
 pub struct Builder {
 	context_path: Option<PathBuf>,
+	cluster: Option<Cluster>,
+	context: Option<Context>,
+	namespace: Option<Namespace>,
 }
 
 impl Builder {
-	pub async fn build(self) -> Result<Client> {
+	pub fn with_cluster(mut self, cluster: Cluster) -> Self {
+		self.cluster = Some(cluster);
+		self
+	}
+	pub fn with_context(mut self, context: Context) -> Self {
+		self.context = Some(context);
+		self
+	}
+
+	pub fn with_namespace(mut self, namespace: Namespace) -> Self {
+		self.namespace = Some(namespace);
+		self
+	}
+
+	pub async fn build(mut self) -> Result<Client> {
 		// let c = K8sClient::new(service, default_namespace)
-		let opt = KubeConfigOptions {
+		let mut opt = KubeConfigOptions {
 			..Default::default()
 		};
+		if let Some(ctr) = self.cluster.take() {
+			opt.cluster = Some(ctr.0)
+		}
+		if let Some(ctx) = self.context.take() {
+			opt.context = Some(ctx.0)
+		}
 		let cfg = Config::from_kubeconfig(&opt).await?;
 
-		// let config = Config::infer().await?;
-		// let service = ServiceBuilder::new()
-		// 	.layer(cfg.base_uri_layer())
-		// 	.option_layer(cfg.auth_layer().context("cfg.auth_layer")?)
-		// 	.map_err(BoxError::from)
-		// 	.service(hyper_util::client::legacy::Client::builder(TokioExecutor::new()).build_http());
-		// let client = kube::Client::new(service, cfg.default_namespace);
+		let ns = self
+			.namespace
+			.take()
+			.unwrap_or_else(|| Namespace(cfg.default_namespace.clone()))
+			.0;
 
-		let client = kube::Client::try_from(cfg).context("trying to build client from config")?;
+		let https = cfg.rustls_https_connector()?;
+		let service = ServiceBuilder::new()
+			.layer(cfg.base_uri_layer())
+			.option_layer(cfg.auth_layer()?)
+			.map_err(BoxError::from)
+			.service(hyper_util::client::legacy::Client::builder(TokioExecutor::new()).build(https));
+		let client = K8sClient::new(service, ns);
 
 		let info = client
 			.apiserver_version()
