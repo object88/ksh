@@ -94,7 +94,7 @@ jobs:
             github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              sha: context.payload.pull_request.head.sha ?? context.sha,
+              sha: context.payload?.pull_request?.head?.sha || context.sha,
               state: ('${{ env.STATUS }}' == 'success' ? 'success' : 'error'),
               description: ('${{ env.STATUS }}' == 'success' ? 'Complete' : 'Failed'),
               context: 'Build complete',
