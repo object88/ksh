@@ -1,11 +1,15 @@
 use anyhow::{Context, Result};
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode, size};
+use crossterm::{
+	ExecutableCommand,
+	terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode, size},
+};
 use futures::{SinkExt, StreamExt};
 use kube::api::{AttachedProcess, TerminalSize};
 use scopeguard;
-use tracing::{info, warn};
+use tokio_util::sync::CancellationToken;
+use tracing::{error, info, warn};
 
-use crate::k8s::pod::Name;
+use crate::{cli::cli::Runnable, k8s::pod::Name};
 
 pub struct Command {
 	node_api: crate::k8s::node::NodeClient,
@@ -30,44 +34,6 @@ impl Command {
 			pod_mgr,
 			name,
 		}
-	}
-
-	pub async fn run(&self) -> Result<()> {
-		enable_raw_mode()?;
-		let _guard = scopeguard::guard((), |_| {
-			// Ensure that we drop out of raw mode.
-			let _ = disable_raw_mode();
-		});
-
-		let node = match self.node_api.find_node().await {
-			Ok(x) => x,
-			Err(e) => anyhow::bail!("failed to find a node: {}", e),
-		};
-		let node_name = node.metadata.name.context("failed to get node")?;
-
-		warn!("about to create pv");
-		let pv = self.pv_api.generate(node_name);
-		self.pv_api.instantiate(&pv).await?;
-
-		warn!("about to create pvc");
-		let pvc = self.pvc_mgr.generate()?;
-		self.pvc_mgr.instantiate(&pvc).await?;
-
-		warn!("about to create pod");
-		let pod = self.pod_mgr.generate(&self.name);
-		let pod = self.pod_mgr.instantiate(&pod).await?;
-		let pod_name = pod.metadata.name.as_ref().unwrap().clone();
-		warn!("runrunrun");
-		let mut attached_process = self.pod_mgr.runrunrun(pod_name).await?;
-
-		warn!("attaching resize and streams");
-		self.handle_resize(&mut attached_process).await?;
-		self.handle_streams(&mut attached_process).await?;
-
-		let status = attached_process.take_status().unwrap().await;
-		info!("{:?}", status);
-
-		Ok(())
 	}
 
 	async fn handle_resize(&self, attached_pod: &mut AttachedProcess) -> Result<()> {
@@ -103,16 +69,85 @@ impl Command {
 		let mut stdin = tokio::io::stdin();
 		let mut stdout = tokio::io::stdout();
 
+		// TODO: need to make sure this is cleanly handling shutdown
+		// On shell exit, getting:
+		// thread 'tokio-rt-worker' (9580349) panicked at src/cli/commands/run.rs:72:6:
+		// called `Result::unwrap()` on an `Err` value: Kind(BrokenPipe)
+		// note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 		tokio::spawn(async move {
-			tokio::io::copy(&mut stdin, &mut stdin_writer)
-				.await
-				.unwrap();
+			match tokio::io::copy(&mut stdin, &mut stdin_writer).await {
+				Ok(byte_count) => info!("sent {byte_count} bytes"),
+				Err(e) => error!("error in stdin stream: {e}"),
+			}
 		});
 		tokio::spawn(async move {
 			tokio::io::copy(&mut stdout_reader, &mut stdout)
 				.await
 				.unwrap();
 		});
+		Ok(())
+	}
+}
+
+impl Runnable for Command {
+	async fn run(&self, cancel: CancellationToken) -> Result<()> {
+		let node = match self.node_api.find_node().await {
+			Ok(x) => x,
+			Err(e) => anyhow::bail!("failed to find a node: {}", e),
+		};
+		let node_name = node.metadata.name.context("failed to get node")?;
+
+		warn!("about to create pv");
+		let pv = self.pv_api.generate(node_name);
+		self.pv_api.instantiate(&pv).await?;
+
+		warn!("about to create pvc");
+		let pvc = self.pvc_mgr.generate()?;
+		self.pvc_mgr.instantiate(&pvc).await?;
+
+		warn!("about to create pod");
+		let pod = self.pod_mgr.generate(&self.name);
+		let pod = self.pod_mgr.instantiate(&pod).await?;
+		let pod_name = pod.metadata.name.as_ref().unwrap().clone();
+		warn!("runrunrun");
+
+		// Entering interactive area
+		enable_raw_mode()?;
+		let mut stdout = std::io::stdout();
+		stdout.execute(EnterAlternateScreen)?;
+
+		let _guard = scopeguard::guard((), |_| {
+			// Restore the prior screen and ensure that we drop out of raw mode.
+			match stdout.execute(LeaveAlternateScreen) {
+				Ok(_) => {},
+				Err(e) => error!("failed to exit alternate screen: {e}"),
+			}
+			let _ = disable_raw_mode();
+		});
+
+		let mut attached_process = self.pod_mgr.runrunrun(pod_name).await?;
+
+		warn!("attaching resize and streams");
+		self.handle_resize(&mut attached_process).await?;
+		self.handle_streams(&mut attached_process).await?;
+
+		let status_future = attached_process.take_status().unwrap();
+
+		tokio::select! {
+			_ = cancel.cancelled() => {
+				// The application is being shut down
+				info!("shutting down application")
+			},
+			_ = attached_process.join() => {
+				// The remote process has completed
+				info!("attached process has completed")
+			}
+		};
+
+		info!("waiting for status");
+		let status = status_future.await;
+		info!("{:?}", status);
+
 		Ok(())
 	}
 }
