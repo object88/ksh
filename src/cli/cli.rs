@@ -8,7 +8,8 @@ use clap::{
 	Arg, Command,
 	builder::{EnumValueParser, PathBufValueParser},
 };
-use tracing::warn;
+use tokio_util::sync::CancellationToken;
+use tracing::{error, info, warn};
 
 use crate::k8s::pod::Name;
 use crate::{
@@ -34,6 +35,10 @@ const FLAG_GLOBAL_PROFILES_FILE: &str = "profiles";
 
 const CMD_RUN_FLAG_NAME: &str = "name";
 const CMD_RUN_FLAG_GENERATIVE_NAME: &str = "generative-name";
+
+pub trait Runnable {
+	fn run(&self, cancel: CancellationToken) -> impl std::future::Future<Output = Result<()>> + Send;
+}
 
 enum Cmd {
 	Debug,
@@ -179,12 +184,14 @@ impl Cli {
 				Arg::new(FLAG_GLOBAL_LOG_LEVEL)
 					.long(FLAG_GLOBAL_LOG_LEVEL)
 					.default_value(logging::DEFAULT)
+					.global(true)
 					.help("Set the log level")
 					.long_help("Set the log level. 'trace' is the most verbose and 'off' the least verbose")
 					.value_parser(EnumValueParser::<ConfigLevelFilter>::new()),
 			)
 			.arg(
 				Arg::new(FLAG_GLOBAL_PROFILES_FILE)
+					.global(true)
 					.long(FLAG_GLOBAL_PROFILES_FILE)
 					.default_value(config_dir.into_os_string())
 					.value_parser(PathBufValueParser::new()),
@@ -265,7 +272,31 @@ impl Cli {
 
 				let cmd = crate::cli::commands::run::Command::new(client, name);
 
-				cmd.run().await
+				let cancel_token = CancellationToken::new();
+				let run_cancel_token = cancel_token.clone();
+
+				let join_handle = tokio::spawn(async move {
+					info!("starting run command");
+					match cmd.run(run_cancel_token).await {
+						Ok(_) => info!("run finished OK"),
+						Err(e) => error!("run command errored: {e}"),
+					}
+					info!("run command done");
+				});
+
+				tokio::select! {
+					_ = tokio::signal::ctrl_c() => {
+						 info!("received ctrl-c")
+					},
+					_ = join_handle => {
+						info!("command finished")
+					}
+				}
+				info!("cancelling cancel token");
+				cancel_token.cancel();
+
+				info!("all done!");
+				Ok(())
 			},
 			Some((CMD_VERSION, _sub)) => Ok(()),
 			_ => Ok(()),
