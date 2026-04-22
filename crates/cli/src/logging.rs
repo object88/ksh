@@ -73,7 +73,7 @@ impl<'de> Visitor<'de> for ConfigLevelFilterVisitor {
 
 /// Using serde to deserialize the ConfigLevelFilter
 /// ```
-/// use ksh::cli::logging::ConfigLevelFilter;
+/// use cli::logging::ConfigLevelFilter;
 /// #[derive(serde::Deserialize)]
 /// struct Foo {
 ///	  a: ConfigLevelFilter,
@@ -87,7 +87,7 @@ impl<'de> Visitor<'de> for ConfigLevelFilterVisitor {
 ///
 /// This is a runtime error
 /// ```should_panic
-/// use ksh::cli::logging::ConfigLevelFilter;
+/// use cli::logging::ConfigLevelFilter;
 /// #[derive(serde::Deserialize)]
 /// struct Foo {
 ///	  a: ConfigLevelFilter,
