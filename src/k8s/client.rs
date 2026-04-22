@@ -49,17 +49,17 @@ pub struct Builder {
 }
 
 impl Builder {
-	pub fn with_cluster(mut self, cluster: Cluster) -> Self {
-		self.cluster = Some(cluster);
+	pub fn with_cluster(mut self, cluster: impl Into<Cluster>) -> Self {
+		self.cluster = Some(cluster.into());
 		self
 	}
-	pub fn with_context(mut self, context: Context) -> Self {
-		self.context = Some(context);
+	pub fn with_context(mut self, context: impl Into<Context>) -> Self {
+		self.context = Some(context.into());
 		self
 	}
 
-	pub fn with_namespace(mut self, namespace: Namespace) -> Self {
-		self.namespace = Some(namespace);
+	pub fn with_namespace(mut self, namespace: impl Into<Namespace>) -> Self {
+		self.namespace = Some(namespace.into());
 		self
 	}
 
