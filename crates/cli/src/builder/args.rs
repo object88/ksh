@@ -1,6 +1,6 @@
 use clap::{Arg, Command, builder::PathBufValueParser};
 
-use crate::cli::{
+use crate::{
 	builder::newtypes::{Cluster, Context, Namespace},
 	constants::{
 		FLAG_COMMON_CLUSTER, FLAG_COMMON_CONTEXT, FLAG_COMMON_KUBECONFIG_FILE, FLAG_COMMON_NAMESPACE,

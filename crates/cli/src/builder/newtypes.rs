@@ -7,10 +7,10 @@ use clap::{
 /// Newtype for k8s::client::Cluster, so that it can implement clap builder's
 /// value parser
 #[derive(Clone, Debug)]
-pub struct Cluster(crate::k8s::client::Cluster);
+pub struct Cluster(ksh::k8s::client::Cluster);
 
-impl From<Cluster> for crate::k8s::client::Cluster {
-	fn from(value: Cluster) -> crate::k8s::client::Cluster {
+impl From<Cluster> for ksh::k8s::client::Cluster {
+	fn from(value: Cluster) -> ksh::k8s::client::Cluster {
 		value.0
 	}
 }
@@ -45,10 +45,10 @@ impl TypedValueParser for ClusterValueParser {
 /// Newtype for k8s::client::Context, so that it can implement clap builder's
 /// value parser
 #[derive(Clone, Debug)]
-pub struct Context(crate::k8s::client::Context);
+pub struct Context(ksh::k8s::client::Context);
 
-impl From<Context> for crate::k8s::client::Context {
-	fn from(value: Context) -> crate::k8s::client::Context {
+impl From<Context> for ksh::k8s::client::Context {
+	fn from(value: Context) -> ksh::k8s::client::Context {
 		value.0
 	}
 }
@@ -83,10 +83,10 @@ impl TypedValueParser for ContextValueParser {
 /// Newtype for k8s::client::Namespace, so that it can implement clap builder's
 /// value parser
 #[derive(Clone, Debug)]
-pub struct Namespace(crate::k8s::client::Namespace);
+pub struct Namespace(ksh::k8s::client::Namespace);
 
-impl From<Namespace> for crate::k8s::client::Namespace {
-	fn from(value: Namespace) -> crate::k8s::client::Namespace {
+impl From<Namespace> for ksh::k8s::client::Namespace {
+	fn from(value: Namespace) -> ksh::k8s::client::Namespace {
 		value.0
 	}
 }

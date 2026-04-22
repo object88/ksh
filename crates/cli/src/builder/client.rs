@@ -1,9 +1,8 @@
+use ksh::k8s::client::Builder;
+
 use crate::{
-	cli::{
-		builder::newtypes::{Cluster, Context, Namespace},
-		constants::{FLAG_COMMON_CLUSTER, FLAG_COMMON_CONTEXT, FLAG_COMMON_NAMESPACE},
-	},
-	k8s::client::Builder,
+	builder::newtypes::{Cluster, Context, Namespace},
+	constants::{FLAG_COMMON_CLUSTER, FLAG_COMMON_CONTEXT, FLAG_COMMON_NAMESPACE},
 };
 
 pub trait BuilderExt {

@@ -1,8 +1,8 @@
 use anyhow::Result;
-use ksh::cli;
+use cli::Cli;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-	let root = cli::cli::Cli::new();
+	let root = Cli::new();
 	root.parse().await
 }

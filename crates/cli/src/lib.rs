@@ -1,3 +1,9 @@
+pub mod logging;
+
+mod builder;
+mod commands;
+mod constants;
+
 use std::fmt::{Display, Formatter};
 use std::future::Future;
 use std::path::PathBuf;
@@ -10,12 +16,11 @@ use clap::{
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, warn};
 
-use crate::k8s::pod::Name;
 use crate::{
-	cli::builder::{args::CommandExt, client::BuilderExt},
-	cli::logging::{self, ConfigLevelFilter},
-	k8s::client::Client,
+	builder::{args::CommandExt, client::BuilderExt},
+	logging::ConfigLevelFilter,
 };
+use ksh::k8s::{client::Client, pod::Name};
 
 const CMD_DEBUG: &str = "debug";
 const CMD_EXEC: &str = "exec";
@@ -138,7 +143,7 @@ impl Cli {
 					unreachable!()
 				};
 
-				let cmd = crate::cli::commands::run::Command::new(client, name);
+				let cmd = crate::commands::run::Command::new(client, name);
 
 				let cancel_token = CancellationToken::new();
 				let run_cancel_token = cancel_token.clone();

@@ -1,0 +1,17 @@
+[package]
+name = "ksh"
+edition.workspace = true
+version.workspace = true
+
+[lib]
+
+[dependencies]
+anyhow.workspace = true
+futures.workspace = true
+hyper-util.workspace = true
+k8s-openapi.workspace = true
+kube.workspace = true
+serde.workspace = true
+tokio.workspace = true
+tower.workspace = true
+tracing.workspace = true

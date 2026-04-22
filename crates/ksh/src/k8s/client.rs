@@ -1,12 +1,13 @@
 use std::path::PathBuf;
 
 use anyhow::{Context as AnyhowContext, Result};
-use crossterm::terminal::size;
-use futures::{SinkExt, StreamExt};
+// use crossterm::terminal::size;
 use hyper_util::rt::TokioExecutor;
 use kube::{
-	Client as K8sClient, Config,
-	api::{AttachedProcess, TerminalSize},
+	Client as K8sClient,
+	Config,
+	// api::{AttachedProcess, TerminalSize},
+	api::AttachedProcess,
 	client::ConfigExt,
 	config::KubeConfigOptions,
 };
@@ -117,31 +118,31 @@ impl Client {
 		self.client.default_namespace()
 	}
 
-	async fn handle_resize(&self, attached_pod: &mut AttachedProcess) -> Result<()> {
-		let (cols, rows) = size()?;
+	// async fn handle_resize(&self, attached_pod: &mut AttachedProcess) -> Result<()> {
+	// 	let (cols, rows) = size()?;
 
-		let mut resize_writer = attached_pod.terminal_size().unwrap();
-		resize_writer
-			.send(TerminalSize {
-				width: cols,
-				height: rows,
-			})
-			.await?;
+	// 	let mut resize_writer = attached_pod.terminal_size().unwrap();
+	// 	resize_writer
+	// 		.send(TerminalSize {
+	// 			width: cols,
+	// 			height: rows,
+	// 		})
+	// 		.await?;
 
-		tokio::spawn(async move {
-			let mut events = crossterm::event::EventStream::new();
-			while let Some(Ok(crossterm::event::Event::Resize(cols, rows))) = events.next().await {
-				let _ = resize_writer
-					.send(TerminalSize {
-						width: cols,
-						height: rows,
-					})
-					.await;
-			}
-		});
+	// 	tokio::spawn(async move {
+	// 		let mut events = crossterm::event::EventStream::new();
+	// 		while let Some(Ok(crossterm::event::Event::Resize(cols, rows))) = events.next().await {
+	// 			let _ = resize_writer
+	// 				.send(TerminalSize {
+	// 					width: cols,
+	// 					height: rows,
+	// 				})
+	// 				.await;
+	// 		}
+	// 	});
 
-		Ok(())
-	}
+	// 	Ok(())
+	// }
 
 	async fn handle_streams(&self, attached_pod: &mut AttachedProcess) -> Result<()> {
 		let mut stdin_writer = attached_pod.stdin().unwrap();
