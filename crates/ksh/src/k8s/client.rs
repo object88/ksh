@@ -66,7 +66,6 @@ impl Builder {
 	}
 
 	pub async fn build(mut self) -> Result<Client> {
-		// let c = K8sClient::new(service, default_namespace)
 		let mut opt = KubeConfigOptions {
 			..Default::default()
 		};
