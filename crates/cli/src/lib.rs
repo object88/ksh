@@ -103,7 +103,7 @@ impl Cli {
 			.subcommand(Command::new(Cmd::Exec))
 			.subcommand(
 				Command::new(Cmd::Run)
-					.foo()
+					.build_common_flags()
 					.arg(
 						Arg::new(CMD_RUN_FLAG_GENERATIVE_NAME)
 							.long(CMD_RUN_FLAG_GENERATIVE_NAME)
@@ -131,7 +131,7 @@ impl Cli {
 			Some((CMD_EXEC, _sub)) => Ok(()),
 			Some((CMD_RUN, sub)) => {
 				warn!("building builder");
-				let builder = Client::builder().foo(sub);
+				let builder = Client::builder().with_common_flags(sub);
 				let client = builder.build().await?;
 				warn!("running client");
 

@@ -6,11 +6,11 @@ use crate::{
 };
 
 pub trait BuilderExt {
-	fn foo(self, sub: &clap::ArgMatches) -> Self;
+	fn with_common_flags(self, sub: &clap::ArgMatches) -> Self;
 }
 
 impl BuilderExt for Builder {
-	fn foo(mut self, sub: &clap::ArgMatches) -> Self {
+	fn with_common_flags(mut self, sub: &clap::ArgMatches) -> Self {
 		if let Some(x) = sub.get_one::<Cluster>(FLAG_COMMON_CLUSTER) {
 			self = self.with_cluster(x.clone());
 		}

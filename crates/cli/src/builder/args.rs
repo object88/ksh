@@ -8,11 +8,11 @@ use crate::{
 };
 
 pub trait CommandExt {
-	fn foo(self) -> Self;
+	fn build_common_flags(self) -> Self;
 }
 
 impl CommandExt for Command {
-	fn foo(self) -> Self {
+	fn build_common_flags(self) -> Self {
 		self
 			.arg(
 				Arg::new(FLAG_COMMON_KUBECONFIG_FILE)
