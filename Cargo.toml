@@ -19,7 +19,7 @@ kube = { version = "3.1.0", features = ["client", "rustls-tls", "ws"] }
 scopeguard = { version = "1.2.0" }
 serde = { version = "1.0.228" }
 serde_json = { version = "1.0.149" }
-tokio = { version = "1.51.1", features = ["io-std", "macros", "rt-multi-thread"] }
+tokio = { version = "1.52.1", features = ["io-std", "macros", "rt-multi-thread"] }
 tokio-util = { version = "0.7.18" }
 tower = { version = "0.5.3" }
 tracing = { version = "0.1.36" }
