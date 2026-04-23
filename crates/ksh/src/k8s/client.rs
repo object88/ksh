@@ -1,15 +1,8 @@
 use std::path::PathBuf;
 
 use anyhow::{Context as AnyhowContext, Result};
-use crossterm::terminal::size;
-use futures::{SinkExt, StreamExt};
 use hyper_util::rt::TokioExecutor;
-use kube::{
-	Client as K8sClient, Config,
-	api::{AttachedProcess, TerminalSize},
-	client::ConfigExt,
-	config::KubeConfigOptions,
-};
+use kube::{Client as K8sClient, Config, client::ConfigExt, config::KubeConfigOptions};
 use tower::{BoxError, ServiceBuilder};
 use tracing::warn;
 
@@ -49,17 +42,17 @@ pub struct Builder {
 }
 
 impl Builder {
-	pub fn with_cluster(mut self, cluster: Cluster) -> Self {
-		self.cluster = Some(cluster);
+	pub fn with_cluster(mut self, cluster: impl Into<Cluster>) -> Self {
+		self.cluster = Some(cluster.into());
 		self
 	}
-	pub fn with_context(mut self, context: Context) -> Self {
-		self.context = Some(context);
+	pub fn with_context(mut self, context: impl Into<Context>) -> Self {
+		self.context = Some(context.into());
 		self
 	}
 
-	pub fn with_namespace(mut self, namespace: Namespace) -> Self {
-		self.namespace = Some(namespace);
+	pub fn with_namespace(mut self, namespace: impl Into<Namespace>) -> Self {
+		self.namespace = Some(namespace.into());
 		self
 	}
 
@@ -115,51 +108,5 @@ impl Client {
 
 	pub fn namespace(&self) -> &str {
 		self.client.default_namespace()
-	}
-
-	async fn handle_resize(&self, attached_pod: &mut AttachedProcess) -> Result<()> {
-		let (cols, rows) = size()?;
-
-		let mut resize_writer = attached_pod.terminal_size().unwrap();
-		resize_writer
-			.send(TerminalSize {
-				width: cols,
-				height: rows,
-			})
-			.await?;
-
-		tokio::spawn(async move {
-			let mut events = crossterm::event::EventStream::new();
-			while let Some(Ok(crossterm::event::Event::Resize(cols, rows))) = events.next().await {
-				let _ = resize_writer
-					.send(TerminalSize {
-						width: cols,
-						height: rows,
-					})
-					.await;
-			}
-		});
-
-		Ok(())
-	}
-
-	async fn handle_streams(&self, attached_pod: &mut AttachedProcess) -> Result<()> {
-		let mut stdin_writer = attached_pod.stdin().unwrap();
-		let mut stdout_reader = attached_pod.stdout().unwrap();
-
-		let mut stdin = tokio::io::stdin();
-		let mut stdout = tokio::io::stdout();
-
-		tokio::spawn(async move {
-			tokio::io::copy(&mut stdin, &mut stdin_writer)
-				.await
-				.unwrap();
-		});
-		tokio::spawn(async move {
-			tokio::io::copy(&mut stdout_reader, &mut stdout)
-				.await
-				.unwrap();
-		});
-		Ok(())
 	}
 }

@@ -1,0 +1,31 @@
+[package]
+name = "cli"
+edition.workspace = true
+version.workspace = true
+
+[[bin]]
+name = "ksh"
+path = "src/bin/main.rs"
+
+[profile.release]
+codegen-units = 1
+lto = true
+strip = true
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+crossterm.workspace = true
+dirs.workspace = true
+futures.workspace = true
+ksh = { path = "../ksh" }
+kube.workspace = true
+scopeguard.workspace = true
+serde.workspace = true
+tokio.workspace = true
+tokio-util.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true

@@ -9,23 +9,24 @@ use scopeguard;
 use tokio_util::sync::CancellationToken;
 use tracing::{error, info, warn};
 
-use crate::{cli::cli::Runnable, k8s::pod::Name};
+use crate::Runnable;
+use ksh::k8s::pod::Name;
 
 pub struct Command {
-	node_api: crate::k8s::node::NodeClient,
-	pv_api: crate::k8s::pv::PvClient,
-	pvc_mgr: crate::k8s::pvc::Manager,
-	pod_mgr: crate::k8s::pod::Manager,
+	node_api: ksh::k8s::node::NodeClient,
+	pv_api: ksh::k8s::pv::PvClient,
+	pvc_mgr: ksh::k8s::pvc::Manager,
+	pod_mgr: ksh::k8s::pod::Manager,
 
 	name: Name,
 }
 
 impl Command {
-	pub fn new(client: crate::k8s::client::Client, name: Name) -> Command {
-		let node_api = crate::k8s::node::new(&client);
-		let pv_api = crate::k8s::pv::new(&client);
-		let pvc_mgr = crate::k8s::pvc::new(&client);
-		let pod_mgr = crate::k8s::pod::new(&client);
+	pub fn new(client: ksh::k8s::client::Client, name: Name) -> Command {
+		let node_api = ksh::k8s::node::new(&client);
+		let pv_api = ksh::k8s::pv::new(&client);
+		let pvc_mgr = ksh::k8s::pvc::new(&client);
+		let pod_mgr = ksh::k8s::pod::new(&client);
 
 		Command {
 			node_api,
