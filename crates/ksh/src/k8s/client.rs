@@ -2,7 +2,11 @@ use std::path::PathBuf;
 
 use anyhow::{Context as AnyhowContext, Result};
 use hyper_util::rt::TokioExecutor;
-use kube::{Client as K8sClient, Config, client::ConfigExt, config::KubeConfigOptions};
+use kube::{
+	Client as K8sClient, Config,
+	client::ConfigExt,
+	config::{KubeConfigOptions, Kubeconfig},
+};
 use tower::{BoxError, ServiceBuilder};
 use tracing::warn;
 
@@ -51,13 +55,17 @@ impl Builder {
 		self
 	}
 
+	pub fn with_kubeconfig(mut self, kubeconfig: PathBuf) -> Self {
+		self.context_path = Some(kubeconfig);
+		self
+	}
+
 	pub fn with_namespace(mut self, namespace: impl Into<Namespace>) -> Self {
 		self.namespace = Some(namespace.into());
 		self
 	}
 
 	pub async fn build(mut self) -> Result<Client> {
-		// let c = K8sClient::new(service, default_namespace)
 		let mut opt = KubeConfigOptions {
 			..Default::default()
 		};
@@ -67,7 +75,12 @@ impl Builder {
 		if let Some(ctx) = self.context.take() {
 			opt.context = Some(ctx.0)
 		}
-		let cfg = Config::from_kubeconfig(&opt).await?;
+		let cfg = if let Some(path) = self.context_path {
+			let f = Kubeconfig::read_from(path)?;
+			Config::from_custom_kubeconfig(f, &opt).await?
+		} else {
+			Config::from_kubeconfig(&opt).await?
+		};
 
 		let ns = self
 			.namespace
