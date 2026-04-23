@@ -1,8 +1,12 @@
+use std::path::PathBuf;
+
 use ksh::k8s::client::Builder;
 
 use crate::{
 	builder::newtypes::{Cluster, Context, Namespace},
-	constants::{FLAG_COMMON_CLUSTER, FLAG_COMMON_CONTEXT, FLAG_COMMON_NAMESPACE},
+	constants::{
+		FLAG_COMMON_CLUSTER, FLAG_COMMON_CONTEXT, FLAG_COMMON_KUBECONFIG_FILE, FLAG_COMMON_NAMESPACE,
+	},
 };
 
 pub trait BuilderExt {
@@ -16,6 +20,9 @@ impl BuilderExt for Builder {
 		}
 		if let Some(x) = sub.get_one::<Context>(FLAG_COMMON_CONTEXT) {
 			self = self.with_context(x.clone());
+		}
+		if let Some(x) = sub.get_one::<PathBuf>(FLAG_COMMON_KUBECONFIG_FILE) {
+			self = self.with_kubeconfig(x.clone());
 		}
 		if let Some(x) = sub.get_one::<Namespace>(FLAG_COMMON_NAMESPACE) {
 			self = self.with_namespace(x.clone());
